@@ -204,6 +204,7 @@ def getProducts():
     # cursor = None
     # conn = None
     try:
+        userId = session['userId']
         # conn = mysql.connect()
         # cursor = conn.cursor(pymysql.cursors.DictCursor)
         if session['addCall'] == 0:
@@ -225,8 +226,12 @@ def getProducts():
             correlation_matrix.shape
             #raj add userid basis get latest bought product, find index in dataframe
 
+            #userId
+            cursor.execute("SELECT pid FROM shoppingHistory WHERE user_id = %s  order by created desc LIMIT 1",
+                           (userId))
+            data = cursor.fetchone()
 
-            i = X.index[99]
+            i = data['pid']
 
             product_names = list(X.index)
             product_ID = product_names.index(i)
