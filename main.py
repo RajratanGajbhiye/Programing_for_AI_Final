@@ -144,13 +144,13 @@ def checkOut():
 @app.route('/postSignup',methods=['GET','POST'])
 def postSignup():
 
-    # read the posted values from the UI
-    _name = request.form['inputName']
-    _email = request.form['inputEmail']
-    _password = request.form['inputPassword']
-    print(_name,_email, _password)
 
-    cursor.callproc('sp_createUser',(_name,_email, _password))
+    userName = request.form['inputName']
+    userEmail = request.form['inputEmail']
+    userPassword = request.form['inputPassword']
+    print(userName,userEmail, userPassword)
+
+    cursor.callproc('sp_createUser',(userName,userEmail, userPassword))
     data = cursor.fetchall()
     print(data)
     if len(data) == 0:
@@ -174,18 +174,18 @@ def postLogin():
     # read the posted values from the UI
     # _name = request.form['inputName']
     try:
-        _email = request.form['inputEmail']
-        _password = request.form['inputPassword']
-        print(_email, _password)
+        userEmail = request.form['inputEmail']
+        userPassword = request.form['inputPassword']
+        print(userEmail, userPassword)
 
-        cursor.execute("SELECT * FROM usergrp WHERE user_username = %s and user_password = %s ", (_email,_password))
+        cursor.execute("SELECT * FROM usergrp WHERE user_username = %s and user_password = %s ", (userEmail,userPassword))
         data = cursor.fetchall()
 
         if len(data) > 0:
             # conn.commit()
             session.clear()
             session.modified = True
-            session['userId'] = _email
+            session['userId'] = userEmail
             session['addCall'] = 0
             return redirect(url_for('getProducts'))
         else:
