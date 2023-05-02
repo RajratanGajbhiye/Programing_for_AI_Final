@@ -44,6 +44,97 @@ def error():
     return render_template('error.html')
 
 
+@app.route('/checkOut',methods=['GET','POST'])
+def checkOut():
+
+    # print(session)
+
+    userId = session['userId']
+
+    codeKeys = [key for key in session['itemInCart'].keys() if session['itemInCart'][key].get('prodCode') is not None]
+
+    productIds = codeKeys
+    print("checkout : ", userId," : ", productIds)
+
+    for productCode in productIds:
+
+        proname = session["itemInCart"][productCode]["prodName"]
+
+        now = datetime.datetime.now()
+        query = "INSERT INTO shoppingHistory (user_id, pid, prodname, created) VALUES (%s, %s, %s, %s)"
+        values = (userId, productCode,proname, now)
+        cursor.execute(query, values)
+
+        print(cursor.rowcount, "record inserted.")
+
+    if cursor.rowcount > 0:
+        conn.commit()
+        print('checkout success !')
+        session.modified = True
+        session.clear()
+        session['userId'] = userId
+        session['addCall'] = 0
+        return redirect(url_for('getProducts'))
+    else:
+        return 'error'
+
+
+
+@app.route('/postSignup',methods=['GET','POST'])
+def postSignup():
+
+    # read the posted values from the UI
+    _name = request.form['inputName']
+    _email = request.form['inputEmail']
+    _password = request.form['inputPassword']
+    print(_name,_email, _password)
+
+    cursor.callproc('sp_createUser',(_name,_email, _password))
+    data = cursor.fetchall()
+    print(data)
+    if len(data) == 0:
+        conn.commit()
+        print('User created successfully !')
+        flash('User created successfully !')
+        # return json.dumps({'message': 'User created successfully !'})
+        return render_template('login.html')
+    else:
+        dataKey = list(data[0].keys())[0]
+        error_message = f'An error occurred: {dataKey}'
+        print(error_message)
+        flash(error_message)
+        return render_template('signup.html')
+
+
+
+@app.route('/postLogin', methods=['POST'])
+def postLogin():
+
+    # read the posted values from the UI
+    # _name = request.form['inputName']
+    try:
+        _email = request.form['inputEmail']
+        _password = request.form['inputPassword']
+        print(_email, _password)
+
+        cursor.execute("SELECT * FROM usergrp WHERE user_username = %s and user_password = %s ", (_email,_password))
+        data = cursor.fetchall()
+
+        if len(data) > 0:
+            # conn.commit()
+            session.clear()
+            session.modified = True
+            session['userId'] = _email
+            session['addCall'] = 0
+            return redirect(url_for('getProducts'))
+        else:
+            return 'error login'
+
+    except Exception as e:
+        print(e)
+
+    return 'Error post login end'
+
 
 myProdList = []
 
