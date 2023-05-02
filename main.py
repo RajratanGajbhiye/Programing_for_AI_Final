@@ -44,6 +44,67 @@ def error():
     return render_template('error.html')
 
 
+
+@app.route('/addProductToCart', methods=['POST'])
+def addProductToCart():
+    # cursor = None
+    # conn = None
+    try:
+        prodQuantity = int(request.form['quantity'])
+        prodCode = request.form['code']
+        prodName = request.form['name']
+        prodPrice = float(request.form['price'])
+
+        if request.method == 'POST' and prodCode and prodQuantity :
+
+            allProdTotalPrice = 0
+            allProdTotalQuantity = 0
+            session.modified = True
+            prodCartArray = {
+                prodCode: {'prodName': prodName, 'prodCode': prodCode, 'prodQuantity': prodQuantity, 'prodPrice': prodPrice,
+                              'totalProdPrice': prodQuantity * prodPrice}}
+
+
+            if 'itemInCart' in session:
+                if prodCode in session['itemInCart']:
+                    for prodKey, prodValue in session['itemInCart'].items():
+                        if prodCode == prodKey:
+                            oldProdQantity = session['itemInCart'][prodKey]['prodQuantity']
+                            totalProdQuantity = oldProdQantity + prodQuantity
+                            session['itemInCart'][prodKey]['prodQuantity'] = totalProdQuantity
+                            session['itemInCart'][prodKey]['totalProdPrice'] = totalProdQuantity * prodPrice
+                else:
+                    session['itemInCart'] = array_merge(session['itemInCart'], prodCartArray)
+
+                for prodKey, prodValue in session['itemInCart'].items():
+                    individualProdQuantity = int(session['itemInCart'][prodKey]['prodQuantity'])
+                    individualProdPrice = float(session['itemInCart'][prodKey]['totalProdPrice'])
+                    allProdTotalQuantity = allProdTotalQuantity + individualProdQuantity
+                    allProdTotalPrice = allProdTotalPrice + individualProdPrice
+            else:
+                session['itemInCart'] = prodCartArray
+                allProdTotalQuantity = allProdTotalQuantity + prodQuantity
+                allProdTotalPrice = allProdTotalPrice + prodQuantity * prodPrice
+
+            session['allProdTotalQuantity'] = allProdTotalQuantity
+            session['allProdTotalPrice'] = allProdTotalPrice
+
+            session.modified = True
+            session['addCall'] = 1
+            return redirect(url_for('.getProducts'))
+        else:
+            return 'Error while adding item to cart'
+    except Exception as e:
+        print(e)
+    # finally:
+    #     if cursor:
+    #         cursor.close()
+    #     if conn:
+    #         conn.close()
+    return 'Error while adding item to cart'
+
+
+
 @app.route('/checkOut',methods=['GET','POST'])
 def checkOut():
 
@@ -202,6 +263,24 @@ def getProducts():
     #         conn.close()
     return "Error occurred while retrieving products"
 
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return render_template('login.html')
+
+@app.route('/empty')
+def empty_cart():
+    try:
+        userId= session['userId']
+        session.clear()
+        session.modified = True
+        session['userId'] = userId
+        session['addCall'] = 1
+        return redirect(url_for('.getProducts'))
+    except Exception as e:
+        print(e)
+    return "Error occurred while retrieving"
 
 
 
