@@ -210,34 +210,31 @@ def getProducts():
         if session['addCall'] == 0:
             global myProdList
             myProdList =[]
-            amazon_ratings = pd.read_csv('ratings_Beauty.csv')
-            amazon_ratings = amazon_ratings.dropna()
-            amazon_ratings1 = amazon_ratings.head(10000)
-            ratings_utility_matrix = amazon_ratings1.pivot_table(values='Rating', index='UserId', columns='ProductId',
+            prodRatings = pd.read_csv('ratings_Beauty.csv')
+            prodRatings = prodRatings.dropna()
+            prodRatingsFilter = prodRatings.head(10000)
+            ratingsUtilityMatrix = prodRatingsFilter.pivot_table(values='Rating', index='UserId', columns='ProductId',
                                                                  fill_value=0)
-            ratings_utility_matrix.shape
-            X = ratings_utility_matrix.T
-            X.shape
-            X1 = X
-            SVD = TruncatedSVD(n_components=10)
-            decomposed_matrix = SVD.fit_transform(X)
-            decomposed_matrix.shape
-            correlation_matrix = np.corrcoef(decomposed_matrix)
-            correlation_matrix.shape
+            xtrans = ratingsUtilityMatrix.T
+
+            singularValueDecomposition = TruncatedSVD(n_components=10)
+            decomposedMatrix = singularValueDecomposition.fit_transform(xtrans)
+
+            correlationMatrix = np.corrcoef(decomposedMatrix)
+
             #raj add userid basis get latest bought product, find index in dataframe
 
-            #userId
             cursor.execute("SELECT pid FROM shoppingHistory WHERE user_id = %s  order by created desc LIMIT 1",
                            (userId))
             data = cursor.fetchone()
 
             i = data['pid']
 
-            product_names = list(X.index)
-            product_ID = product_names.index(i)
-            correlation_product_ID = correlation_matrix[product_ID]
-            correlation_product_ID.shape
-            Recommend = list(X.index[correlation_product_ID > 0.90])
+            productNames = list(xtrans.index)
+            productID = productNames.index(i)
+            correlationProductID = correlationMatrix[productID]
+
+            Recommend = list(xtrans.index[correlationProductID > 0.90])
 
             # Removes the item already bought by the customer
             Recommend.remove(i)
@@ -246,18 +243,14 @@ def getProducts():
 
             for item in Recommend[0:9]:
 
-                my_dict = {}
-                my_dict['code'] = item
-                # my_dict['name'] = amazon_ratings.loc[amazon_ratings['ProductId'] == item, 'ProdName'].values[0]
-                my_dict['name'] = item
-                my_dict['price'] =  amazon_ratings.loc[amazon_ratings['ProductId'] == item, 'Price'].values[0]
+                myDict = {}
+                myDict['code'] = item
+                # myDict['name'] = amazon_ratings.loc[amazon_ratings['ProductId'] == item, 'ProdName'].values[0]
+                myDict['name'] = item
+                myDict['price'] = prodRatings.loc[prodRatings['ProductId'] == item, 'Price'].values[0]
 
-                myProdList.append(my_dict)
+                myProdList.append(myDict)
 
-    #
-            # cursor.execute("SELECT * FROM product")
-            # rows = cursor.fetchall()
-            # print(rows)
         return render_template('product.html', productsList=myProdList)
     except Exception as e:
         print(e)
