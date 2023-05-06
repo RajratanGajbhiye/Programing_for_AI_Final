@@ -227,7 +227,7 @@ def getProducts():
             cursor.execute("SELECT pid FROM shoppingHistory WHERE user_id = %s  order by created desc LIMIT 1",
                            (userId))
             data = cursor.fetchone()
-            if len(data) >0:
+            if data:
                 i = data['pid']
             else:
                 i = xtrans.index[99]
